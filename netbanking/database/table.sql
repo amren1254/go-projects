@@ -1,3 +1,9 @@
+
+CREATE USER netbanking;
+
+CREATE DATABASE netbanking;
+GRANT ALL PRIVILEGES ON DATABASE netbanking TO netbanking;
+
 -- Table: public.user
 
 -- DROP TABLE IF EXISTS public."user";
@@ -20,8 +26,8 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public."user"
-    OWNER to postgres;
+-- ALTER TABLE IF EXISTS public."user"
+--     OWNER to netbanking;
 
 
 
@@ -46,8 +52,8 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.transaction
-    OWNER to postgres;
+-- ALTER TABLE IF EXISTS public.transaction
+--     OWNER to postgres;
 
 
 -- Table: public.account
@@ -72,5 +78,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.account
-    OWNER to postgres;
+-- ALTER TABLE IF EXISTS public.account
+--     OWNER to postgres;
