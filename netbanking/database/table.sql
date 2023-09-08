@@ -4,79 +4,74 @@ CREATE USER netbanking;
 CREATE DATABASE netbanking;
 GRANT ALL PRIVILEGES ON DATABASE netbanking TO netbanking;
 
--- Table: public.user
+------------------------------------------------------------
+----------------------------------------------
+-- SCHEMA: netbanking
 
--- DROP TABLE IF EXISTS public."user";
+-- DROP SCHEMA IF EXISTS netbanking ;
 
-CREATE TABLE IF NOT EXISTS public."user"
+CREATE SCHEMA IF NOT EXISTS netbanking
+    AUTHORIZATION netbanking;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA netbanking
+GRANT ALL ON TABLES TO netbanking;
+
+----------------------------------------------
+CREATE TYPE netbanking.user_status AS ENUM
+    ('active', 'inactive');
+
+ALTER TYPE netbanking.user_status
+    OWNER TO netbanking;
+
+-----------------------------------------------
+CREATE TYPE netbanking.account_type AS ENUM
+    ('savings', 'current');
+
+ALTER TYPE netbanking.account_type
+    OWNER TO netbanking;
+
+----------------------------------------------
+
+CREATE TABLE netbanking."user"
 (
-    id uuid NOT NULL,
-    name character varying(50) COLLATE pg_catalog."default",
-    username character varying(50) COLLATE pg_catalog."default" NOT NULL,
-    password character varying(1024) COLLATE pg_catalog."default" NOT NULL,
-    status boolean,
-    phone character varying(15) COLLATE pg_catalog."default",
-    email character varying(100) COLLATE pg_catalog."default",
-    created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT user_id PRIMARY KEY (id)
-)
-WITH (
-    OIDS = FALSE
-)
-TABLESPACE pg_default;
-
--- ALTER TABLE IF EXISTS public."user"
---     OWNER to netbanking;
-
-
-
--- Table: public.transaction
-
--- DROP TABLE IF EXISTS public.transaction;
-
-CREATE TABLE IF NOT EXISTS public.transaction
-(
-    id uuid NOT NULL,
-    tx_amount integer,
-    tx_type character varying COLLATE pg_catalog."default",
-    tx_time timestamp with time zone,
-    CONSTRAINT transaction_pkey PRIMARY KEY (id),
-    CONSTRAINT transaction_id FOREIGN KEY (id)
-        REFERENCES public."user" (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-)
-WITH (
-    OIDS = FALSE
-)
-TABLESPACE pg_default;
-
--- ALTER TABLE IF EXISTS public.transaction
---     OWNER to postgres;
-
-
--- Table: public.account
-
--- DROP TABLE IF EXISTS public.account;
-
-CREATE TABLE IF NOT EXISTS public.account
-(
-    id uuid NOT NULL,
-    account_number character varying COLLATE pg_catalog."default",
-    total_amount bigint,
+    id uuid NOT NULL UNIQUE,
+    name character varying(50),
+    username character varying(50) NOT NULL UNIQUE,
+    password character varying(100),
+    status netbanking.user_status NOT NULL,
+    phone bigint,
+    email character varying(100) UNIQUE,
     created_at timestamp with time zone,
-    updated_at timestamp with time zone,
-    CONSTRAINT account_id PRIMARY KEY (id),
-    CONSTRAINT account FOREIGN KEY (id)
-        REFERENCES public."user" (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
+    updated_at timestamp with time zone DEFAULT current_timestamp,
+    CONSTRAINT pk PRIMARY KEY (id, username, email)
 )
 WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
 
--- ALTER TABLE IF EXISTS public.account
---     OWNER to postgres;
+ALTER TABLE IF EXISTS netbanking."user"
+    OWNER to netbanking;
+
+------------------------------------------------
+
+-------------------------------------------------
+CREATE TABLE netbanking.account
+(
+    id uuid NOT NULL UNIQUE,
+    account_number bigserial NOT NULL UNIQUE,
+    account_type netbanking.account_type NOT NULL,
+    total_amount bigint,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+    CONSTRAINT account_pk PRIMARY KEY (id, account_number)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS netbanking.account
+    OWNER to netbanking;
+
+---------------------------------------------------------------------------------

@@ -1,10 +1,8 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
-	"os"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -15,69 +13,28 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// const (
-// 	username = "postgres" //os.Getenv("DB_USERNAME")
-// 	password = "root"     //os.Getenv("DB_PASSWORD")
-// 	hostname = "127.0.0.1"
-// 	port     = 5432
-// 	dbname   = "netbanking"
-// )
+//psql -U username -d myDataBase -a -f myInsertFile
 
-// func init() {
-// 	//initializing database here
-// 	NewDatabaseRepository(&sql.DB{}).InitDatabaseConnection()
-// }
+func (db DatabaseRepository) InsertUser(user model.User, id uuid.UUID) bool {
 
-type DatabaseRepository struct {
-	DB *sql.DB
-}
-
-func NewDatabaseRepository(database *sql.DB) *DatabaseRepository {
-	return &DatabaseRepository{
-		DB: database,
-	}
-}
-
-func dataSourceName(databaseName string) string {
-	port, _ := strconv.Atoi(os.Getenv("DB_PORT"))
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOSTNAME"), port, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
-}
-
-func (db *DatabaseRepository) InitDatabaseConnection() {
-	var err error
-	dbname := os.Getenv("DB_NAME")
-	newDb, err := sql.Open("postgres", dataSourceName(dbname))
-	if err != nil {
-		log.Printf("Error while opening connection with database")
-		return
-	}
-	//defer DB.Close()
-
-	newDb.SetMaxOpenConns(10)
-	newDb.SetMaxIdleConns(10)
-	newDb.SetConnMaxLifetime(time.Minute * 5)
-	db.DB = newDb
-	// return newDb
-}
-
-func (db DatabaseRepository) InsertUser(user model.User) {
-	id := uuid.New()
-	query := `INSERT INTO "user"("id", "name", "username", "password", "status", "phone", "email", "created_at") VALUES($1,$2,$3,$4,$5,$6,$7,$8)`
+	query := `INSERT INTO "user"("id", "name", "username", "password", "status", "phone", "email", "created_at") VALUES($1,$2,$3,$4,$5::text::user_status,$6,$7,$8)`
 	insert, err := db.DB.Prepare(query)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 	//encrypt password before storing
 	encryptedPassword, err := encrypt(user.Password)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 	//get utc
 	var datetime = time.Now().UTC()
 
 	response, err := insert.Exec(
-		id, user.Name,
+		id,
+		user.Name,
 		user.Username,
 		encryptedPassword,
 		user.Status,
@@ -89,7 +46,12 @@ func (db DatabaseRepository) InsertUser(user model.User) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(response.RowsAffected())
+	if userCreate, err := response.RowsAffected(); userCreate == 1 {
+		return true
+	} else {
+		log.Println(err)
+		return false
+	}
 }
 
 func (db DatabaseRepository) retrieveUserDetails(user model.Login) (retrievedUserCredential model.Login, err error) {
@@ -106,4 +68,49 @@ func (db DatabaseRepository) retrieveUserDetails(user model.Login) (retrievedUse
 		}
 	}
 	return retrievedUserCredential, nil
+}
+
+// generate account number
+func generateAccountNumber() string {
+	// Seed the random number generator with the current time.
+	// rand.Seed(time.Now().UnixNano())
+
+	// Generate a random 12 digit number.
+	randomNumber := rand.Intn(1000000000000) + 1
+	return strconv.Itoa(randomNumber)
+	// Print the random number to the console.
+	// fmt.Println(randomNumber)
+}
+
+func (db DatabaseRepository) CreateAccount(id uuid.UUID) bool {
+
+	query := `INSERT INTO "account"
+	("id", "account_number", "account_type", "total_amount", "created_at") 
+	VALUES($1,$2,$3::text::account_type,$4,$5)`
+	insert, err := db.DB.Prepare(query)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	//get utc
+	var datetime = time.Now().UTC()
+
+	response, err := insert.Exec(
+		id,
+		generateAccountNumber(),
+		"savings",
+		0,
+		datetime.Format(time.RFC3339),
+	)
+	insert.Close()
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	if accountCreate, err := response.RowsAffected(); accountCreate == 1 {
+		return true
+	} else {
+		log.Println(err)
+		return false
+	}
 }

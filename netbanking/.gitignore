@@ -21,3 +21,5 @@
 go.work
 netbanking
 .env
+controller/homepagecontroller.go
+views

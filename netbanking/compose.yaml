@@ -2,15 +2,16 @@ services:
   web:
     env_file:
       - .env
+    container_name: netbanking-web-1
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       - DB_HOSTNAME=netbanking-db-1
-      - DB_NAME=amren
-      - DB_PASSWORD=amren
+      - DB_NAME=netbanking
+      - DB_PASSWORD=netbanking
       - DB_PORT=5432
-      - DB_USERNAME=amren
+      - DB_USERNAME=netbanking
       - DEBUG:"true"
     ports:
       - "8080:8080"
@@ -19,9 +20,10 @@ services:
   db:
     image: postgres:14.1-alpine
     restart: always
-    # environment:
-    #   - POSTGRES_USER=amren
-    #   - POSTGRES_PASSWORD=netbanking
+    container_name: netbanking-db-1
+    environment:
+      - POSTGRES_USER=netbanking
+      - POSTGRES_PASSWORD=netbanking
     ports:
       - '5432:5432'
     volumes:

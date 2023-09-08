@@ -15,7 +15,6 @@ func init() {
 }
 
 func main() {
-	// database.DatabaseRepository{DB: &sql.DB{}}
 	r := router.InitRoute()
-	r.Run(":8080")
+	log.Fatal(r.Run(":8080"))
 }

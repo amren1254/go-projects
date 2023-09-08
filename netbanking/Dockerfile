@@ -12,7 +12,7 @@ ENV GO111MODULE=on \
 
 # Install tools required for project
 # Run `docker build --no-cache .` to update dependencies
-RUN apk add --no-cache git bash
+RUN apk add --no-cache git bash ca-certificates
 
 # Create appuser
 # ENV USER=appuser

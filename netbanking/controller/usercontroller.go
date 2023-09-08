@@ -9,6 +9,7 @@ import (
 	"netbanking/model"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Response struct {
@@ -22,12 +23,20 @@ func Ping(c *gin.Context) {
 func Signup(db database.DatabaseRepository) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var user model.User
-
 		if err := c.BindJSON(&user); err != nil {
 			return
 		}
-		db.InsertUser(user)
-		c.IndentedJSON(http.StatusCreated, Response{Message: "User Created"})
+		id := uuid.New()
+		if isUserCreated := db.InsertUser(user, id); isUserCreated {
+			log.Println("user created")
+			//if user is created successfully, then create account
+			if isAccountCreated := db.CreateAccount(id); isAccountCreated {
+				log.Println("account created successfully")
+			}
+			c.IndentedJSON(http.StatusCreated, Response{Message: "User Created"})
+		} else {
+			c.IndentedJSON(http.StatusInternalServerError, Response{Message: "Unable to create user"})
+		}
 	}
 }
 
@@ -39,11 +48,7 @@ func Login(db database.DatabaseRepository) func(c *gin.Context) {
 			log.Println(err)
 		}
 
-		isValidUserCredentials, err := db.VerifyUserCredential(user)
-		if err != nil {
-			log.Println(err)
-		}
-		if isValidUserCredentials {
+		if isValidUserCredentials, err := db.VerifyUserCredential(user); isValidUserCredentials {
 			//generate and assign token
 			token, err := auth.GenerateAuthToken(user.Username)
 			if err != nil {
@@ -51,8 +56,34 @@ func Login(db database.DatabaseRepository) func(c *gin.Context) {
 			}
 			c.IndentedJSON(http.StatusOK, gin.H{"SuccessMessage": "UserLoggedIn", "token": token})
 		} else {
-			c.IndentedJSON(http.StatusOK, gin.H{"WarningMessage": "Wrong Credential"})
+			c.IndentedJSON(http.StatusOK, gin.H{"WarningMessage": "Wrong Credential -" + err.Error()})
 		}
 	}
+}
 
+//for manual account creation
+// func CreateAccount(db database.DatabaseRepository) func(c *gin.Context) {
+// 	return func(c *gin.Context) {
+// 		account := model.Account{}
+// 		if err := c.BindJSON(&account); err != nil {
+// 			log.Println(err)
+// 		}
+// 		isAccountCreated := db.CreateAccount(account)
+// 		if isAccountCreated {
+
+// 		}
+// 	}
+// }
+
+func GetProfile(db database.DatabaseRepository) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		//get all the user detail and account detail
+
+	}
+}
+
+func UpdateProfile(db database.DatabaseRepository) func(c *gin.Context) {
+	return func(c *gin.Context) {
+
+	}
 }
