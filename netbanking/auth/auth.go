@@ -2,23 +2,26 @@ package auth
 
 import (
 	"fmt"
+	"netbanking/model"
 	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var mySigningKey = []byte("some-secret-key")
 
-func GenerateAuthToken(user string) (string, error) {
+func GenerateAuthToken(tokenClaims model.TokenClaims) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
 	claims["client"] = "amrendra"
 	claims["aud"] = "localhost"
 	claims["issuer"] = "localhost"
-	claims["user"] = user
+	claims["username"] = tokenClaims.Username
+	claims["id"] = tokenClaims.Id
 	claims["expiry"] = time.Now().Add(time.Minute * 1).Unix()
 	tokenString, err := token.SignedString(mySigningKey)
 	if err != nil {
@@ -34,7 +37,7 @@ func TokenValid(c *gin.Context) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("hello"), nil
+		return []byte("some-secret-key"), nil
 	})
 	if err != nil {
 		return err
@@ -52,4 +55,21 @@ func ExtractToken(c *gin.Context) string {
 		return strings.Split(bearerToken, " ")[1]
 	}
 	return ""
+}
+
+func ExtractUsernameAndIdFromTokenClaims(c *gin.Context) (model.TokenClaims, error) {
+	tokenString := ExtractToken(c)
+	var tokenClaims model.TokenClaims
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return tokenClaims, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		// obtains claims
+		tokenClaims.Username = fmt.Sprint(claims["username"])
+		tokenClaims.Id, _ = uuid.Parse(fmt.Sprint(claims["id"]))
+		return tokenClaims, nil
+	}
+	//log.Println(tokenString)
+	return tokenClaims, nil
 }

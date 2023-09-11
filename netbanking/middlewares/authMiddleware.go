@@ -19,3 +19,12 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func ExtractUsernameFromTokenClaims(c *gin.Context) (string, error) {
+	token := c.Query("token")
+	if token != "" {
+		return token, nil
+	}
+	//c := u.(*jwt.Token).Claims.(jwt.MapClaims)
+	return "", nil
+}

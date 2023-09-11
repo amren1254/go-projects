@@ -1,5 +1,7 @@
 package model
 
+import "github.com/google/uuid"
+
 type Status string
 type Account_Type string
 
@@ -37,4 +39,15 @@ type Account struct {
 	Account_Number string       `json:"account_number" binding:"required"`
 	Account_Type   Account_Type `json:"account_type" binding:"required"`
 	Total_Amount   string       `json:"total_amount" binding:"required"`
+}
+
+type Profile struct {
+	Account Account
+	User    User
+}
+
+type TokenClaims struct {
+	// *StandardClaims
+	Id       uuid.UUID
+	Username string
 }

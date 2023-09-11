@@ -27,6 +27,7 @@ func InitRoute() *gin.Engine {
 	//authorized access to apis
 	public := router.Group("/api/v1")
 	public.Use(middleware.JwtAuthMiddleware())
+	// username := middleware.ExtractUsernameFromTokenClaims(c *gin.Context)
 	public.GET("/profile", controller.GetProfile(db))
 	public.POST("profile", controller.UpdateProfile(db))
 	// public.GET("/albums", controller.GetAlbum)

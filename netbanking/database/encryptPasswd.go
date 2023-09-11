@@ -7,6 +7,7 @@ import (
 
 	"netbanking/model"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,16 +21,16 @@ func encrypt(password string) ([]byte, error) {
 	return hash, nil
 }
 
-func (db DatabaseRepository) VerifyUserCredential(user model.Login) (bool, error) {
+func (db DatabaseRepository) VerifyUserCredential(user model.Login) (uuid.UUID, bool, error) {
 	// retrive password hash from database
-	retrievedUser, err := db.retrieveUserDetails(user)
+	id, retrievedUser, err := db.retrieveUserLoginInfo(user)
 	if err != nil {
 		log.Println(err)
 	}
 
 	//compare hash from database
 	if err := bcrypt.CompareHashAndPassword([]byte(retrievedUser.Password), []byte(user.Password)); err != nil {
-		return false, err
+		return id, false, err
 	}
-	return true, nil
+	return id, true, nil
 }

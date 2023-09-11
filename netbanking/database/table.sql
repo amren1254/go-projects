@@ -1,36 +1,26 @@
+-- CREATE USER netbanking;
 
-CREATE USER netbanking;
-
-CREATE DATABASE netbanking;
+SELECT 'CREATE DATABASE netbanking' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'netbanking')\gexec
 GRANT ALL PRIVILEGES ON DATABASE netbanking TO netbanking;
-
-------------------------------------------------------------
-----------------------------------------------
--- SCHEMA: netbanking
-
--- DROP SCHEMA IF EXISTS netbanking ;
 
 CREATE SCHEMA IF NOT EXISTS netbanking
     AUTHORIZATION netbanking;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA netbanking
-GRANT ALL ON TABLES TO netbanking;
+-- ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA netbanking
+-- GRANT ALL ON TABLES TO netbanking;
 
-----------------------------------------------
 CREATE TYPE netbanking.user_status AS ENUM
     ('active', 'inactive');
 
 ALTER TYPE netbanking.user_status
     OWNER TO netbanking;
 
------------------------------------------------
 CREATE TYPE netbanking.account_type AS ENUM
     ('savings', 'current');
 
 ALTER TYPE netbanking.account_type
     OWNER TO netbanking;
 
-----------------------------------------------
 
 CREATE TABLE netbanking."user"
 (
@@ -53,9 +43,7 @@ TABLESPACE pg_default;
 ALTER TABLE IF EXISTS netbanking."user"
     OWNER to netbanking;
 
-------------------------------------------------
 
--------------------------------------------------
 CREATE TABLE netbanking.account
 (
     id uuid NOT NULL UNIQUE,
@@ -73,5 +61,3 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS netbanking.account
     OWNER to netbanking;
-
----------------------------------------------------------------------------------

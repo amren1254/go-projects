@@ -2,8 +2,6 @@ package database
 
 import (
 	"log"
-	"math/rand"
-	"strconv"
 	"time"
 
 	"netbanking/model"
@@ -54,32 +52,21 @@ func (db DatabaseRepository) InsertUser(user model.User, id uuid.UUID) bool {
 	}
 }
 
-func (db DatabaseRepository) retrieveUserDetails(user model.Login) (retrievedUserCredential model.Login, err error) {
+func (db DatabaseRepository) retrieveUserLoginInfo(user model.Login) (id uuid.UUID, retrievedUserCredential model.Login, err error) {
 
-	rows, err := db.DB.Query(`SELECT "username", "password" FROM "user" WHERE "username" = $1`, user.Username)
+	rows, err := db.DB.Query(`SELECT "id", "username", "password" FROM "user" WHERE "username" = $1`, user.Username)
 	if err != nil {
 		log.Println(err)
 	}
+	// var id uuid.UUID
 	for rows.Next() {
-		err = rows.Scan(&retrievedUserCredential.Username, &retrievedUserCredential.Password)
+		err = rows.Scan(&id, &retrievedUserCredential.Username, &retrievedUserCredential.Password)
 		if err != nil {
 			log.Println(err)
-			return retrievedUserCredential, err
+			return id, retrievedUserCredential, err
 		}
 	}
-	return retrievedUserCredential, nil
-}
-
-// generate account number
-func generateAccountNumber() string {
-	// Seed the random number generator with the current time.
-	// rand.Seed(time.Now().UnixNano())
-
-	// Generate a random 12 digit number.
-	randomNumber := rand.Intn(1000000000000) + 1
-	return strconv.Itoa(randomNumber)
-	// Print the random number to the console.
-	// fmt.Println(randomNumber)
+	return id, retrievedUserCredential, nil
 }
 
 func (db DatabaseRepository) CreateAccount(id uuid.UUID) bool {
@@ -113,4 +100,36 @@ func (db DatabaseRepository) CreateAccount(id uuid.UUID) bool {
 		log.Println(err)
 		return false
 	}
+}
+
+func (db DatabaseRepository) RetriveUser(token model.TokenClaims) (retrievedUser model.User, err error) {
+	rows, err := db.DB.Query(`SELECT "username","email","phone","status" FROM "user" WHERE "username" = $1 AND "id" = $2`, token.Username, token.Id)
+	if err != nil {
+		log.Println(err)
+	}
+	for rows.Next() {
+		status := []uint8{}
+		err = rows.Scan(&retrievedUser.Username, &retrievedUser.Email, &retrievedUser.Phone, &status)
+		retrievedUser.Status = model.Status(string(status))
+		if err != nil {
+			log.Println(err)
+			return retrievedUser, err
+		}
+	}
+	return retrievedUser, nil
+}
+
+func (db DatabaseRepository) RetrieveAccountDetails(token model.TokenClaims) (retrievedAccount model.Account, err error) {
+	rows, err := db.DB.Query(`SELECT "account_number", "account_type","total_amount" FROM "account" WHERE "id" = $1`, token.Id)
+	if err != nil {
+		log.Println(err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&retrievedAccount.Account_Number, &retrievedAccount.Account_Type, &retrievedAccount.Total_Amount)
+		if err != nil {
+			log.Println(err)
+			return retrievedAccount, err
+		}
+	}
+	return retrievedAccount, nil
 }
